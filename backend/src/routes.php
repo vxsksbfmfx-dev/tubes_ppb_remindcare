@@ -1,7 +1,13 @@
 <?php
+use App\Controllers\AuthController;
 use App\Controllers\MedicineController;
 
-// Medicines CRUD
+// ── Auth ──────────────────────────────────────────────────
+$router->post('/api/auth/register', [AuthController::class, 'register']);
+$router->post('/api/auth/login',    [AuthController::class, 'login']);
+$router->get('/api/auth/me',        [AuthController::class, 'me']);
+
+// ── Medicines ─────────────────────────────────────────────
 $router->get('/api/medicines',         [MedicineController::class, 'index']);
 $router->get('/api/medicines/{id}',    [MedicineController::class, 'show']);
 $router->post('/api/medicines',        [MedicineController::class, 'store']);

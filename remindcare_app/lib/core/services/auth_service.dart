@@ -11,7 +11,7 @@ class AuthService {
   }) async {
     final res = await ApiClient.post('/api/auth/register', {
       'name': name, 'email': email, 'password': password,
-      'role': role, if (phone != null) 'phone': phone,
+      'role': role, 'phone': ?phone,
     });
     return res['data'] as Map<String, dynamic>;
   }

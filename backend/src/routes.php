@@ -6,6 +6,8 @@ use App\Controllers\MedicineController;
 $router->post('/api/auth/register', [AuthController::class, 'register']);
 $router->post('/api/auth/login',    [AuthController::class, 'login']);
 $router->get('/api/auth/me',        [AuthController::class, 'me']);
+$router->post('/api/auth/refresh',  [AuthController::class, 'refresh']);
+$router->post('/api/auth/logout',   [AuthController::class, 'logout']);
 
 // ── Medicines ─────────────────────────────────────────────
 $router->get('/api/medicines',         [MedicineController::class, 'index']);

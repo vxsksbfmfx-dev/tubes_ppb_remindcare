@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/models/user_model.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/services/session_service.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -15,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailCtrl = TextEditingController();
   final _passCtrl  = TextEditingController();
   final _svc       = AuthService();
+  final _session   = SessionService();
   bool _loading    = false;
   bool _obscure    = true;
 
@@ -22,15 +25,17 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
-      final data = await _svc.login(
+      final data  = await _svc.login(
         email: _emailCtrl.text.trim(),
         password: _passCtrl.text,
       );
-      // Simpan token sementara (SharedPreferences di commit 03)
       final token = data['token'] as String;
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home', arguments: token);
-      }
+      final user  = UserModel.fromJson(data['user'] as Map<String, dynamic>);
+
+      // Simpan ke SharedPreferences
+      await _session.saveSession(token, user);
+
+      if (mounted) Navigator.pushReplacementNamed(context, '/home');
     } on Exception catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

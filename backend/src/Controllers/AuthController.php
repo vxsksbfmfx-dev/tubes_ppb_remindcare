@@ -29,8 +29,8 @@ class AuthController extends BaseController
             $this->error('Email sudah terdaftar', 409);
         }
 
-        $id  = $this->user->createUser($data);
-        $row = $this->user->safeData($this->user->findById($id));
+        $id    = $this->user->createUser($data);
+        $row   = $this->user->safeData($this->user->findById($id));
         $token = JwtHelper::generate(['sub' => $id, 'role' => $row['role']]);
 
         $this->success(['user' => $row, 'token' => $token], 'Registrasi berhasil', 201);
@@ -56,7 +56,7 @@ class AuthController extends BaseController
         $this->success(['user' => $safe, 'token' => $token], 'Login berhasil');
     }
 
-    /** GET /api/auth/me  (butuh token) */
+    /** GET /api/auth/me  */
     public function me(): void
     {
         $payload = $this->requireAuth();
@@ -65,12 +65,29 @@ class AuthController extends BaseController
         $this->success($this->user->safeData($row));
     }
 
-    /** Helper: ambil JWT dari header */
+    /** POST /api/auth/refresh — perpanjang token */
+    public function refresh(): void
+    {
+        $payload = $this->requireAuth();
+        $row     = $this->user->findById($payload['sub']);
+        if (!$row) $this->error('User tidak ditemukan', 404);
+
+        $newToken = JwtHelper::generate(['sub' => $row['id'], 'role' => $row['role']]);
+        $this->success(['token' => $newToken], 'Token diperbarui');
+    }
+
+    /** POST /api/auth/logout — (stateless: client hapus token) */
+    public function logout(): void
+    {
+        $this->requireAuth(); // validasi token dulu
+        $this->success(null, 'Logout berhasil');
+    }
+
     protected function requireAuth(): array
     {
-        $header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-        $token  = str_replace('Bearer ', '', $header);
-        $payload = \App\Helpers\JwtHelper::verify($token);
+        $header  = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+        $token   = str_replace('Bearer ', '', $header);
+        $payload = JwtHelper::verify($token);
         if (!$payload) $this->error('Unauthorized', 401);
         return $payload;
     }

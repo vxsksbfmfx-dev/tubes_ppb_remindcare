@@ -5,6 +5,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/models/reminder_log_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/schedule_provider.dart';
+import '../../../providers/websocket_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,20 +17,38 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _init());
   }
 
-  void _load() {
+  void _init() {
     final auth = context.read<AuthProvider>();
-    if (auth.token != null) {
+    if (auth.token == null || auth.user == null) return;
+
+    // Load data
+    context.read<ScheduleProvider>().loadAll(auth.token!);
+
+    // Connect WebSocket
+    final ws = context.read<WebSocketProvider>();
+    ws.connect(auth.token!, auth.user!.id);
+
+    // Real-time: update log saat ada konfirmasi dari lain
+    ws.onLogConfirmed((data) {
       context.read<ScheduleProvider>().loadAll(auth.token!);
-    }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('✔ Obat sudah diminum (real-time)',
+              style: GoogleFonts.poppins()),
+          backgroundColor: const Color(AppConstants.secondaryColor),
+        ));
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final auth     = context.watch<AuthProvider>();
     final schedule = context.watch<ScheduleProvider>();
+    final ws       = context.watch<WebSocketProvider>();
 
     return Scaffold(
       backgroundColor: const Color(AppConstants.backgroundColor),
@@ -38,6 +57,13 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text('RemindCare', style: GoogleFonts.poppins(
             color: Colors.white, fontWeight: FontWeight.bold)),
         actions: [
+          // Indikator WebSocket
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Icon(
+              ws.connected ? Icons.wifi : Icons.wifi_off,
+              color: ws.connected ? Colors.greenAccent : Colors.white54,
+              size: 20)),
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: () {
@@ -48,11 +74,14 @@ class _HomeScreenState extends State<HomeScreen> {
       body: schedule.loading
         ? const Center(child: CircularProgressIndicator())
         : RefreshIndicator(
-            onRefresh: _load,
+            onRefresh: () async {
+              if (auth.token != null) {
+                await context.read<ScheduleProvider>().loadAll(auth.token!);
+              }
+            },
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                // Header card
                 _buildSummaryCard(schedule.takenToday, schedule.totalToday),
                 const SizedBox(height: 20),
                 Text('Jadwal Hari Ini', style: GoogleFonts.poppins(
@@ -64,7 +93,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   Center(child: Text('Tidak ada jadwal hari ini',
                       style: GoogleFonts.poppins(color: Colors.grey)))
                 else
-                  ...schedule.todayLogs.map((log) => _buildLogCard(log, auth.token!)),
+                  ...schedule.todayLogs.map((log) =>
+                      _buildLogCard(log, auth.token!, auth.user!.id)),
               ],
             ),
           ),
@@ -77,8 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(AppConstants.primaryColor), Color(0xFF1565C0)]),
-        borderRadius: BorderRadius.circular(20),
-      ),
+        borderRadius: BorderRadius.circular(20)),
       child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('Kepatuhan Hari Ini', style: GoogleFonts.poppins(
@@ -98,7 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildLogCard(ReminderLogModel log, String token) {
+  Widget _buildLogCard(ReminderLogModel log, String token, int elderlyId) {
     final color = log.isTaken  ? const Color(AppConstants.secondaryColor)
                 : log.isMissed ? const Color(AppConstants.warningColor)
                 : const Color(AppConstants.primaryColor);
@@ -121,7 +150,12 @@ class _HomeScreenState extends State<HomeScreen> {
           ])),
           if (log.isPending)
             TextButton(
-              onPressed: () => context.read<ScheduleProvider>().confirmLog(token, log.id),
+              onPressed: () async {
+                await context.read<ScheduleProvider>().confirmLog(token, log.id);
+                // Broadcast ke WebSocket room
+                context.read<WebSocketProvider>().broadcastConfirmed(
+                    elderlyId, {'log_id': log.id, 'medicine': log.medicineName});
+              },
               child: Text('Sudah Minum', style: GoogleFonts.poppins(
                   color: color, fontWeight: FontWeight.bold)))
           else

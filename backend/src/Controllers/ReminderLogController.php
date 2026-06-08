@@ -31,11 +31,18 @@ class ReminderLogController extends BaseController
     public function confirm(string $id): void
     {
         $ok = $this->log->confirm((int)$id, 'user:' . $this->user['sub']);
-        if ($ok) {
-            $this->success(null, 'Berhasil dikonfirmasi');
-        } else {
+        if (!$ok) {
             $this->error('Log tidak ditemukan atau sudah dikonfirmasi', 409);
         }
+
+        // Broadcast via WebSocket (fire-and-forget, tidak blocking)
+        $row       = $this->log->findOne('id = ?', [(int)$id]);
+        $elderlyId = $row['elderly_user_id'] ?? 0;
+        if ($elderlyId) {
+            $this->broadcastWs($elderlyId, 'log_confirmed', $row);
+        }
+
+        $this->success(null, 'Berhasil dikonfirmasi');
     }
 
     /** GET /api/logs/weekly-report */
@@ -46,5 +53,31 @@ class ReminderLogController extends BaseController
             : (int)($_GET['elderly_id'] ?? $this->user['sub']);
         $data = $this->log->weeklyReport($elderlyId);
         $this->success($data);
+    }
+
+    /**
+     * Kirim event ke WebSocket server via HTTP internal (port 8090).
+     * WS server menerima pesan auth dulu, tapi ini adalah broadcast langsung
+     * melalui internal socket (simplified).
+     */
+    private function broadcastWs(int $elderlyId, string $event, ?array $data): void
+    {
+        // Simple non-blocking socket write ke WebSocket server
+        $payload = json_encode([
+            'type'       => 'broadcast',
+            'event'      => $event,
+            'elderly_id' => $elderlyId,
+            'data'       => $data,
+            'token'      => INTERNAL_BROADCAST_TOKEN,
+        ]);
+
+        $ctx = stream_context_create(['http' => [
+            'method'  => 'POST',
+            'header'  => "Content-Type: application/json\r\n",
+            'content' => $payload,
+            'timeout' => 1,
+        ]]);
+        // Gunakan internal HTTP endpoint jika tersedia
+        @file_get_contents('http://127.0.0.1:8091/broadcast', false, $ctx);
     }
 }

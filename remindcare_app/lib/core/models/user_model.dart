@@ -2,26 +2,25 @@ class UserModel {
   final int    id;
   final String name;
   final String email;
-  final String? phone;
   final String role;
+  final String? phone;
+  final String? avatar;
 
-  const UserModel({
+  UserModel({
     required this.id,
     required this.name,
     required this.email,
-    this.phone,
     required this.role,
+    this.phone,
+    this.avatar,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> j) => UserModel(
-    id:    j['id']   as int,
-    name:  j['name'] as String,
-    email: j['email'] as String,
-    phone: j['phone'] as String?,
-    role:  j['role']  as String? ?? 'family',
+    id:     j['id'],
+    name:   j['name'],
+    email:  j['email'],
+    role:   j['role'] ?? 'family',
+    phone:  j['phone'],
+    avatar: j['avatar'],
   );
-
-  Map<String, dynamic> toJson() => {
-    'id': id, 'name': name, 'email': email, 'phone': phone, 'role': role,
-  };
 }

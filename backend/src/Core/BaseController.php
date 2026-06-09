@@ -52,3 +52,22 @@ class BaseController
         return $errors;
     }
 }
+
+    protected function requireAuth(): array
+    {
+        $header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+        $token  = str_starts_with($header, 'Bearer ')
+            ? substr($header, 7)
+            : null;
+
+        if (!$token) {
+            $this->error('Token diperlukan', 401);
+        }
+
+        $payload = \App\Helpers\JwtHelper::verify($token);
+        if (!$payload) {
+            $this->error('Token tidak valid atau sudah expired', 401);
+        }
+
+        return $payload;
+    }

@@ -49,3 +49,21 @@ define('GOOGLE_CLIENT_ID', 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com');
 
 // ── Google OAuth ───────────────────────────────────────────
 define('GOOGLE_CLIENT_ID', 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com');
+
+// ── Firebase / FCM ─────────────────────────────────────────
+// Project ID dari Firebase Console → Project Settings
+define('FCM_PROJECT_ID',      'your-firebase-project-id');
+// Path ke service account JSON (download dari Firebase → Service Accounts)
+define('FCM_SERVICE_ACCOUNT', BASE_PATH . '/storage/firebase-service-account.json');
+
+// ── Firebase / FCM ─────────────────────────────────────────
+// Project ID dari Firebase Console → Project Settings
+define('FCM_PROJECT_ID',      'your-firebase-project-id');
+// Path ke service account JSON (download dari Firebase → Service Accounts)
+define('FCM_SERVICE_ACCOUNT', BASE_PATH . '/storage/firebase-service-account.json');
+
+// ── Firebase / FCM ─────────────────────────────────────────
+// Project ID dari Firebase Console → Project Settings
+define('FCM_PROJECT_ID',      'your-firebase-project-id');
+// Path ke service account JSON (download dari Firebase → Service Accounts)
+define('FCM_SERVICE_ACCOUNT', BASE_PATH . '/storage/firebase-service-account.json');

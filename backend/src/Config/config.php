@@ -20,3 +20,4 @@ define('JWT_SECRET',  'remindcare_secret_key_ganti_di_production');
 define('JWT_EXPIRE',  86400 * 30); // 30 hari
 \ndefine('INTERNAL_BROADCAST_TOKEN', 'internal_ws_token_secret');
 \ndefine('INTERNAL_BROADCAST_TOKEN', 'internal_ws_token_secret');
+\ndefine('INTERNAL_BROADCAST_TOKEN', 'internal_ws_token_secret');

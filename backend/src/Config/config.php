@@ -21,3 +21,31 @@ define('JWT_EXPIRE',  86400 * 30); // 30 hari
 \ndefine('INTERNAL_BROADCAST_TOKEN', 'internal_ws_token_secret');
 \ndefine('INTERNAL_BROADCAST_TOKEN', 'internal_ws_token_secret');
 \ndefine('INTERNAL_BROADCAST_TOKEN', 'internal_ws_token_secret');
+
+// ── Google OAuth ───────────────────────────────────────────
+// Ganti dengan Google Client ID dari Google Cloud Console
+// https://console.cloud.google.com → APIs & Services → Credentials
+define('GOOGLE_CLIENT_ID', 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com');
+
+// ── Google OAuth ───────────────────────────────────────────
+// Ganti dengan Google Client ID dari Google Cloud Console
+// https://console.cloud.google.com → APIs & Services → Credentials
+define('GOOGLE_CLIENT_ID', 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com');
+
+// ── Google OAuth ───────────────────────────────────────────
+// Ganti dengan Google Client ID dari Google Cloud Console
+// https://console.cloud.google.com → APIs & Services → Credentials
+define('GOOGLE_CLIENT_ID', 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com');
+
+// ── Google OAuth ───────────────────────────────────────────
+// Ganti dengan Google Client ID dari Google Cloud Console
+// https://console.cloud.google.com → APIs & Services → Credentials
+define('GOOGLE_CLIENT_ID', 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com');
+
+// ── Google OAuth ───────────────────────────────────────────
+// Ganti dengan Google Client ID dari Google Cloud Console
+// https://console.cloud.google.com → APIs & Services → Credentials
+define('GOOGLE_CLIENT_ID', 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com');
+
+// ── Google OAuth ───────────────────────────────────────────
+define('GOOGLE_CLIENT_ID', 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com');

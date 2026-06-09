@@ -1,32 +1,43 @@
 <?php
-// ── Public routes ──────────────────────────────────────────
-$router->post('/api/auth/register', [\App\Controllers\AuthController::class,        'register']);
-$router->post('/api/auth/login',    [\App\Controllers\AuthController::class,        'login']);
-$router->post('/api/auth/google',   [\App\Controllers\GoogleAuthController::class,  'login']);
+use App\Controllers\AuthController;
+use App\Controllers\MedicineController;
+use App\Controllers\NotificationController;
+use App\Controllers\ScheduleController;
+use App\Controllers\ReminderLogController;
+use App\Controllers\UserController;
 
-// ── Protected routes ───────────────────────────────────────
-$router->get( '/api/auth/me',       [\App\Controllers\AuthController::class,        'me']);
-$router->get( '/api/auth/refresh',  [\App\Controllers\AuthController::class,        'refresh']);
+// ── Auth ─────────────────────────────────────────────────
+$router->post('/api/auth/register', [AuthController::class, 'register']);
+$router->post('/api/auth/login',    [AuthController::class, 'login']);
+$router->get('/api/auth/me',        [AuthController::class, 'me']);
+$router->post('/api/auth/refresh',  [AuthController::class, 'refresh']);
+$router->post('/api/auth/logout',   [AuthController::class, 'logout']);
+$router->post('/api/auth/google',   [AuthController::class, 'googleLogin']);
 
-// Medicines
-$router->get(   '/api/medicines',         [\App\Controllers\MedicineController::class,  'index']);
-$router->post(  '/api/medicines',         [\App\Controllers\MedicineController::class,  'store']);
-$router->get(   '/api/medicines/{id}',    [\App\Controllers\MedicineController::class,  'show']);
-$router->put(   '/api/medicines/{id}',    [\App\Controllers\MedicineController::class,  'update']);
-$router->delete('/api/medicines/{id}',    [\App\Controllers\MedicineController::class,  'destroy']);
+// ── Users / Profile ───────────────────────────────────────
+$router->get('/api/users/me',              [UserController::class, 'me']);
+$router->put('/api/users/me',              [UserController::class, 'update']);
+$router->post('/api/users/me/avatar',      [UserController::class, 'uploadAvatar']);
+$router->get('/api/users/{id}',            [UserController::class, 'show']);
 
-// Schedules
-$router->get(   '/api/schedules',         [\App\Controllers\ScheduleController::class,  'index']);
-$router->post(  '/api/schedules',         [\App\Controllers\ScheduleController::class,  'store']);
-$router->put(   '/api/schedules/{id}',    [\App\Controllers\ScheduleController::class,  'update']);
-$router->delete('/api/schedules/{id}',    [\App\Controllers\ScheduleController::class,  'destroy']);
+// ── Medicines ─────────────────────────────────────────────
+$router->get('/api/medicines',             [MedicineController::class, 'index']);
+$router->get('/api/medicines/{id}',        [MedicineController::class, 'show']);
+$router->post('/api/medicines',            [MedicineController::class, 'store']);
+$router->put('/api/medicines/{id}',        [MedicineController::class, 'update']);
+$router->delete('/api/medicines/{id}',     [MedicineController::class, 'destroy']);
 
-// Reminder Logs
-$router->get( '/api/logs',                [\App\Controllers\ReminderLogController::class, 'index']);
-$router->post('/api/logs/{id}/confirm',   [\App\Controllers\ReminderLogController::class, 'confirm']);
-$router->get( '/api/logs/weekly-report',  [\App\Controllers\ReminderLogController::class, 'weeklyReport']);
+// ── Schedules ─────────────────────────────────────────────
+$router->get('/api/schedules',             [ScheduleController::class, 'index']);
+$router->post('/api/schedules',            [ScheduleController::class, 'store']);
+$router->put('/api/schedules/{id}',        [ScheduleController::class, 'update']);
+$router->delete('/api/schedules/{id}',     [ScheduleController::class, 'destroy']);
 
-// Notifications (FCM)
-$router->post('/api/notifications/token',             [\App\Controllers\NotificationController::class, 'saveToken']);
-$router->post('/api/notifications/test',              [\App\Controllers\NotificationController::class, 'test']);
-$router->post('/api/notifications/reminder/{id}',     [\App\Controllers\NotificationController::class, 'sendReminder']);
+// ── Reminder Logs ─────────────────────────────────────────
+$router->get('/api/logs',                  [ReminderLogController::class, 'today']);
+$router->post('/api/logs/{id}/confirm',    [ReminderLogController::class, 'confirm']);
+
+// ── Notifications ─────────────────────────────────────────
+$router->post('/api/fcm-token',            [NotificationController::class, 'saveToken']);
+$router->post('/api/notifications/test',   [NotificationController::class, 'sendTest']);
+$router->post('/api/notifications/remind', [NotificationController::class, 'sendReminder']);

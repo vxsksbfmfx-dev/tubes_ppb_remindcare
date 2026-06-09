@@ -3,15 +3,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'core/constants/app_constants.dart';
 import 'core/providers/auth_provider.dart';
+import 'core/providers/dashboard_provider.dart';
 import 'core/providers/history_provider.dart';
 import 'core/providers/profile_provider.dart';
 import 'core/providers/schedule_provider.dart';
 import 'features/auth/screens/login_screen.dart';
-import 'features/history/screens/history_screen.dart';
-import 'features/medicines/screens/medicine_list_screen.dart';
-import 'features/profile/screens/profile_screen.dart';
+import 'features/shell/app_shell.dart';
 import 'features/splash/splash_screen.dart';
-import 'features/statistics/screens/statistics_screen.dart';
 
 void main() => runApp(const RemindCareApp());
 
@@ -22,6 +20,7 @@ class RemindCareApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
         ChangeNotifierProvider(create: (_) => ScheduleProvider()),
         ChangeNotifierProvider(create: (_) => HistoryProvider()),
@@ -35,12 +34,9 @@ class RemindCareApp extends StatelessWidget {
           useMaterial3: true),
         initialRoute: '/',
         routes: {
-          '/':           (_) => const SplashScreen(),
-          '/login':      (_) => const LoginScreen(),
-          '/home':       (_) => const MedicineListScreen(),
-          '/profile':    (_) => const ProfileScreen(),
-          '/history':    (_) => const HistoryScreen(),
-          '/statistics': (_) => const StatisticsScreen(),
+          '/':      (_) => const SplashScreen(),
+          '/login': (_) => const LoginScreen(),
+          '/home':  (_) => const AppShell(),   // ← entry point utama
         },
       ),
     );

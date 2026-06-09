@@ -1,33 +1,42 @@
 class ReminderLogModel {
   final int    id;
+  final int    elderlyId;
   final int    scheduleId;
-  final String medicineName;
-  final DateTime scheduledAt;
-  final DateTime? takenAt;
-  final String status;
+  final String status;          // pending | confirmed | missed
+  final String scheduledAt;
+  final String? confirmedAt;
+  final String? medicineName;
+  final String? brandName;
+  final String? dosage;
   final String? notes;
 
-  ReminderLogModel({
+  const ReminderLogModel({
     required this.id,
+    required this.elderlyId,
     required this.scheduleId,
-    required this.medicineName,
-    required this.scheduledAt,
-    this.takenAt,
     required this.status,
+    required this.scheduledAt,
+    this.confirmedAt,
+    this.medicineName,
+    this.brandName,
+    this.dosage,
     this.notes,
   });
 
-  bool get isPending => status == 'pending';
-  bool get isTaken   => status == 'taken';
-  bool get isMissed  => status == 'missed';
-
   factory ReminderLogModel.fromJson(Map<String, dynamic> j) => ReminderLogModel(
-    id:           j['id'],
-    scheduleId:   j['schedule_id'],
-    medicineName: j['medicine_name'] ?? '',
-    scheduledAt:  DateTime.parse(j['scheduled_at']),
-    takenAt:      j['taken_at'] != null ? DateTime.parse(j['taken_at']) : null,
-    status:       j['status'],
-    notes:        j['notes'],
+    id:           j['id']            as int,
+    elderlyId:    j['elderly_id']    as int,
+    scheduleId:   j['schedule_id']   as int,
+    status:       j['status']        as String,
+    scheduledAt:  j['scheduled_at']  as String,
+    confirmedAt:  j['confirmed_at']  as String?,
+    medicineName: j['medicine_name'] as String?,
+    brandName:    j['brand_name']    as String?,
+    dosage:       j['dosage']        as String?,
+    notes:        j['notes']         as String?,
   );
+
+  bool get isDone    => status == 'confirmed';
+  bool get isMissed  => status == 'missed';
+  bool get isPending => status == 'pending';
 }

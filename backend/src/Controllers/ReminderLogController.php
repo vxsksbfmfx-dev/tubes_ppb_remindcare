@@ -4,80 +4,109 @@ namespace App\Controllers;
 use App\Core\BaseController;
 use App\Middleware\AuthMiddleware;
 use App\Models\ReminderLog;
+use App\Models\User;
 
 class ReminderLogController extends BaseController
 {
     private ReminderLog $log;
-    private array       $user;
+    private User        $user;
 
     public function __construct()
     {
-        $this->user = AuthMiddleware::handle();
         $this->log  = new ReminderLog();
+        $this->user = new User();
     }
 
-    /** GET /api/logs?date=YYYY-MM-DD */
-    public function index(): void
+    /** GET /api/logs?elderly_id=&date= */
+    public function today(): void
     {
-        $date      = $_GET['date'] ?? date('Y-m-d');
-        $elderlyId = $this->user['role'] === 'elderly'
-            ? $this->user['sub']
-            : (int)($_GET['elderly_id'] ?? $this->user['sub']);
-        $rows = $this->log->findByDate($elderlyId, $date);
-        $this->success($rows);
+        $payload   = AuthMiddleware::handle();
+        $elderlyId = $this->resolveElderlyId($payload);
+        $this->success($this->log->todayLogs($elderlyId));
+    }
+
+    /** GET /api/logs/history?elderly_id=&date=&page= */
+    public function history(): void
+    {
+        $payload   = AuthMiddleware::handle();
+        $elderlyId = $this->resolveElderlyId($payload);
+        $date      = $_GET['date'] ?? '';
+        $page      = max(1, (int)($_GET['page'] ?? 1));
+        $per       = 20;
+
+        $data  = $this->log->history($elderlyId, $date, $page, $per);
+        $total = $this->log->historyCount($elderlyId, $date);
+
+        $this->success([
+            'items'        => $data,
+            'total'        => $total,
+            'current_page' => $page,
+            'last_page'    => (int) ceil($total / $per),
+        ]);
+    }
+
+    /** GET /api/logs/stats?elderly_id= */
+    public function stats(): void
+    {
+        $payload   = AuthMiddleware::handle();
+        $elderlyId = $this->resolveElderlyId($payload);
+        $this->success([
+            'weekly'  => $this->log->weeklyStats($elderlyId),
+            'monthly' => $this->log->monthlySummary($elderlyId),
+        ]);
     }
 
     /** POST /api/logs/{id}/confirm */
     public function confirm(string $id): void
     {
-        $ok = $this->log->confirm((int)$id, 'user:' . $this->user['sub']);
-        if (!$ok) {
-            $this->error('Log tidak ditemukan atau sudah dikonfirmasi', 409);
+        $payload = AuthMiddleware::handle();
+        $logRow  = $this->log->findById((int)$id);
+
+        if (!$logRow) $this->error('Log tidak ditemukan', 404);
+        if ($logRow['status'] !== 'pending') {
+            $this->error('Log sudah dikonfirmasi atau terlewat', 400);
         }
 
-        // Broadcast via WebSocket (fire-and-forget, tidak blocking)
-        $row       = $this->log->findOne('id = ?', [(int)$id]);
-        $elderlyId = $row['elderly_user_id'] ?? 0;
-        if ($elderlyId) {
-            $this->broadcastWs($elderlyId, 'log_confirmed', $row);
-        }
-
-        $this->success(null, 'Berhasil dikonfirmasi');
-    }
-
-    /** GET /api/logs/weekly-report */
-    public function weeklyReport(): void
-    {
-        $elderlyId = $this->user['role'] === 'elderly'
-            ? $this->user['sub']
-            : (int)($_GET['elderly_id'] ?? $this->user['sub']);
-        $data = $this->log->weeklyReport($elderlyId);
-        $this->success($data);
-    }
-
-    /**
-     * Kirim event ke WebSocket server via HTTP internal (port 8090).
-     * WS server menerima pesan auth dulu, tapi ini adalah broadcast langsung
-     * melalui internal socket (simplified).
-     */
-    private function broadcastWs(int $elderlyId, string $event, ?array $data): void
-    {
-        // Simple non-blocking socket write ke WebSocket server
-        $payload = json_encode([
-            'type'       => 'broadcast',
-            'event'      => $event,
-            'elderly_id' => $elderlyId,
-            'data'       => $data,
-            'token'      => INTERNAL_BROADCAST_TOKEN,
+        $this->log->update((int)$id, [
+            'status'       => 'confirmed',
+            'confirmed_at' => date('Y-m-d H:i:s'),
         ]);
 
-        $ctx = stream_context_create(['http' => [
-            'method'  => 'POST',
-            'header'  => "Content-Type: application/json\r\n",
-            'content' => $payload,
-            'timeout' => 1,
-        ]]);
-        // Gunakan internal HTTP endpoint jika tersedia
-        @file_get_contents('http://127.0.0.1:8091/broadcast', false, $ctx);
+        // broadcast WebSocket jika tersedia
+        $this->broadcastConfirm($logRow);
+
+        $this->success($this->log->findById((int)$id), 'Konfirmasi berhasil');
+    }
+
+    // ── private helpers ───────────────────────────────────────
+
+    private function resolveElderlyId(array $payload): int
+    {
+        if ($payload['role'] === 'elderly') {
+            return $payload['sub'];
+        }
+        // family: harus kirim elderly_id
+        $id = (int)($_GET['elderly_id'] ?? 0);
+        if (!$id) $this->error('elderly_id wajib diisi', 400);
+        return $id;
+    }
+
+    private function broadcastConfirm(array $logRow): void
+    {
+        // POST ke WebSocket HTTP bridge (opsional)
+        $url = 'http://127.0.0.1:8181/broadcast';
+        $data = json_encode([
+            'type'       => 'log_confirmed',
+            'elderly_id' => $logRow['elderly_id'],
+            'log'        => $logRow,
+        ]);
+        @file_get_contents($url, false, stream_context_create([
+            'http' => [
+                'method'  => 'POST',
+                'header'  => 'Content-Type: application/json',
+                'content' => $data,
+                'timeout' => 1,
+            ],
+        ]));
     }
 }

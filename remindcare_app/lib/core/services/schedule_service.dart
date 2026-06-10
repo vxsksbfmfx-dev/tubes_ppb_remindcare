@@ -1,42 +1,34 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../constants/app_constants.dart';
 import '../models/schedule_model.dart';
+import 'api_client.dart';
 
 class ScheduleService {
-  final String _base = AppConstants.baseUrl;
-  final Map<String, String> _headers;
+  final String _token;
+  ScheduleService(this._token);
 
-  ScheduleService(String token)
-      : _headers = {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        };
-
+  /// GET /api/schedules
   Future<List<ScheduleModel>> getSchedules({int? elderlyId}) async {
-    final uri = Uri.parse('$_base/schedules${elderlyId != null ? "?elderly_id=$elderlyId" : ""}');
-    final res  = await http.get(uri, headers: _headers);
-    final body = jsonDecode(res.body);
-    if (res.statusCode == 200) {
-      return (body['data'] as List).map((e) => ScheduleModel.fromJson(e)).toList();
-    }
-    throw Exception(body['message'] ?? 'Gagal memuat jadwal');
-  }
-
-  Future<void> createSchedule(Map<String, dynamic> data) async {
-    final res = await http.post(
-      Uri.parse('$_base/schedules'),
-      headers: _headers,
-      body: jsonEncode(data),
+    final res = await ApiClient.get(
+      '/schedules',
+      token: _token,
+      queryParams: elderlyId != null ? {'elderly_id': '$elderlyId'} : null,
     );
-    if (res.statusCode != 201) {
-      final body = jsonDecode(res.body);
-      throw Exception(body['message'] ?? 'Gagal membuat jadwal');
-    }
+    return (res['data'] as List)
+        .map((e) => ScheduleModel.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
+  /// POST /api/schedules
+  Future<void> createSchedule(Map<String, dynamic> data) async {
+    await ApiClient.post('/schedules', data, token: _token);
+  }
+
+  /// PUT /api/schedules/:id
+  Future<void> updateSchedule(int id, Map<String, dynamic> data) async {
+    await ApiClient.put('/schedules/$id', data, token: _token);
+  }
+
+  /// DELETE /api/schedules/:id
   Future<void> deleteSchedule(int id) async {
-    final res = await http.delete(Uri.parse('$_base/schedules/$id'), headers: _headers);
-    if (res.statusCode != 200) throw Exception('Gagal menghapus jadwal');
+    await ApiClient.delete('/schedules/$id', token: _token);
   }
 }

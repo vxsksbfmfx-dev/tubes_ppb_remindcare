@@ -1,42 +1,48 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../constants/app_constants.dart';
 import '../models/reminder_log_model.dart';
+import 'api_client.dart';
 
 class ReminderLogService {
-  final String _base = AppConstants.baseUrl;
-  final Map<String, String> _headers;
+  final String _token;
+  ReminderLogService(this._token);
 
-  ReminderLogService(String token)
-      : _headers = {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        };
-
-  Future<List<ReminderLogModel>> getLogs({String? date, int? elderlyId}) async {
-    final params = {
+  /// GET /api/logs
+  Future<List<ReminderLogModel>> getLogs({
+    String? date,
+    int? elderlyId,
+  }) async {
+    final res = await ApiClient.get('/logs', token: _token, queryParams: {
       if (date != null) 'date': date,
-      if (elderlyId != null) 'elderly_id': elderlyId.toString(),
-    };
-    final uri  = Uri.parse('$_base/logs').replace(queryParameters: params);
-    final res  = await http.get(uri, headers: _headers);
-    final body = jsonDecode(res.body);
-    if (res.statusCode == 200) {
-      return (body['data'] as List).map((e) => ReminderLogModel.fromJson(e)).toList();
-    }
-    throw Exception(body['message'] ?? 'Gagal memuat log');
+      if (elderlyId != null) 'elderly_id': '$elderlyId',
+    });
+    return (res['data'] as List)
+        .map((e) => ReminderLogModel.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
+  /// GET /api/logs/history
+  Future<Map<String, dynamic>> getHistory({
+    String? date,
+    int? elderlyId,
+    int page = 1,
+  }) async {
+    final res = await ApiClient.get('/logs/history', token: _token, queryParams: {
+      if (date != null) 'date': date,
+      if (elderlyId != null) 'elderly_id': '$elderlyId',
+      'page': '$page',
+    });
+    return res['data'] as Map<String, dynamic>;
+  }
+
+  /// GET /api/logs/stats
+  Future<Map<String, dynamic>> getStats({int? elderlyId}) async {
+    final res = await ApiClient.get('/logs/stats', token: _token, queryParams: {
+      if (elderlyId != null) 'elderly_id': '$elderlyId',
+    });
+    return res['data'] as Map<String, dynamic>;
+  }
+
+  /// POST /api/logs/:id/confirm
   Future<void> confirm(int logId) async {
-    final res = await http.post(Uri.parse('$_base/logs/$logId/confirm'), headers: _headers);
-    if (res.statusCode != 200) throw Exception('Gagal konfirmasi');
-  }
-
-  Future<List<Map<String, dynamic>>> weeklyReport({int? elderlyId}) async {
-    final uri = Uri.parse('$_base/logs/weekly-report${elderlyId != null ? "?elderly_id=$elderlyId" : ""}');
-    final res  = await http.get(uri, headers: _headers);
-    final body = jsonDecode(res.body);
-    if (res.statusCode == 200) return List<Map<String, dynamic>>.from(body['data']);
-    throw Exception('Gagal memuat laporan');
+    await ApiClient.post('/logs/$logId/confirm', {}, token: _token);
   }
 }

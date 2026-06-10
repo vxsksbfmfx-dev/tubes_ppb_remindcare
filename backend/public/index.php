@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 define('BASE_PATH', dirname(__DIR__));
-
+require_once BASE_PATH . '/vendor/autoload.php';
 require_once BASE_PATH . '/src/Core/Autoloader.php';
 \App\Core\Autoloader::register();
 

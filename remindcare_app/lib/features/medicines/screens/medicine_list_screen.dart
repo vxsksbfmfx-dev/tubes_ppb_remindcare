@@ -6,8 +6,6 @@ import '../../../core/services/medicine_service.dart';
 import 'medicine_form_screen.dart';
 
 class MedicineListScreen extends StatefulWidget {
-  final String token;
-  const MedicineListScreen({super.key, this.token = ''});
   const MedicineListScreen({super.key});
   @override
   State<MedicineListScreen> createState() => _MedicineListScreenState();

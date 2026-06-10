@@ -51,7 +51,6 @@ class BaseController
         }
         return $errors;
     }
-}
 
     protected function requireAuth(): array
     {
@@ -71,3 +70,4 @@ class BaseController
 
         return $payload;
     }
+}
